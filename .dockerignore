@@ -1,0 +1,17 @@
+.git
+.github
+.cursor
+node_modules
+.env
+.env.*
+*.db
+*.db-shm
+*.db-wal
+artifacts
+test-results
+npm-debug.log
+docs
+AGENTS.md
+CONTEXT.md
+README.md
+Caddyfile.example

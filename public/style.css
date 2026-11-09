@@ -1,0 +1,2037 @@
+:root {
+  --bg: #0f1115;
+  --card: #181b22;
+  --fg: #e8eaed;
+  --muted: #9aa0aa;
+  --accent: #5b8cff;
+  --danger: #ff5b6e;
+  --ok: #43d17a;
+  --border: #262a33;
+  /* Relay (TURN) indicator — a distinct violet, deliberately unused elsewhere
+     (grey=idle, blue=connecting/focus, amber=uncertain, green=speaking,
+     red=mute/error) so a relayed link reads as "different path", not "broken". */
+  --relay: #b388ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: radial-gradient(1200px 800px at 50% -10%, #1b2030, var(--bg));
+  color: var(--fg);
+  font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+.app {
+  width: min(100%, 460px);
+  transition: width 180ms ease;
+}
+
+body.room-expanded {
+  place-items: stretch center;
+}
+
+body.room-expanded .app {
+  width: 100%;
+  min-height: calc(100dvh - 32px);
+}
+
+body.room-compact .app {
+  width: min(100%, 320px);
+}
+
+body.room-compact-wide .app {
+  width: min(100%, 480px);
+}
+
+/* Gallery: cameras on but nothing pinned to the stage. Use the available width
+   instead of squeezing the camera grid into a narrow column. */
+body.room-gallery .app {
+  width: min(100%, 1600px);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+h1 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+
+.tm-mark {
+  margin-left: 0.1em;
+  font-size: 0.45em;
+  font-weight: 700;
+  line-height: 0;
+  vertical-align: super;
+  letter-spacing: 0.02em;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 4px;
+}
+
+.info-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid #596170;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-family: Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.info-btn:hover,
+.info-btn:focus-visible {
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.info-btn:focus-visible,
+.dialog-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sub {
+  margin: 0 0 20px;
+  color: var(--muted);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+input[type="text"] {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0f1218;
+  color: var(--fg);
+  font-size: 16px;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+button {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 0;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.05s ease, filter 0.15s ease;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+#join-btn {
+  background: var(--accent);
+  color: white;
+}
+
+.hint {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Build stamp ("<datum tid> <hash>"). Three pixels smaller than .hint, muted
+   and centred — sits under the lobby tip and under the room's "Lämna"-knapp. */
+.build-version {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.error {
+  margin: 12px 0 0;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+/* Landing-page room chooser (only shown on `/`): a label plus the history
+   dropdown and/or the free-text room field, stacked like the rest of the join
+   form. The landing <select> is styled to match the join card's larger text
+   inputs. */
+.room-chooser {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room-chooser-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+#room-select {
+  width: 100%;
+  padding: 14px 40px 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background-color: #0f1218;
+  color: var(--fg);
+  font-size: 16px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa0aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+}
+
+#room-select:hover {
+  border-color: #4a5568;
+}
+
+/* The in-room `.device-select` rules used to supply these; they were removed
+   when the sidebar moved to icon quick-controls. `#room-select` still needs the
+   focus ring (a11y) and dark native option list, so they live here now. */
+#room-select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.25);
+}
+
+#room-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+#room-select option {
+  background: var(--card);
+  color: var(--fg);
+}
+
+#join-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.enable-audio {
+  width: 100%;
+  margin-bottom: 16px;
+  background: var(--accent);
+  color: white;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.18);
+  }
+}
+
+.room-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  margin-bottom: 18px;
+}
+
+.room-header .title-row {
+  margin-bottom: 0;
+}
+
+.status {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.status.live {
+  color: var(--ok);
+}
+
+/* The room name under the `babbla` wordmark: its own full-width line below the
+   title row (so `status` keeps its top-right spot), with a copy-link button to
+   the right of the name. */
+.room-name-row {
+  position: relative; /* anchor for the .share-onboarding popover */
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 2px;
+}
+
+/* A quiet subtitle that stays single-line and truncates with an ellipsis if a
+   long name would overflow — the full name lives in the title tooltip. */
+.room-name {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Copy the room link. Two icons (copy + check) stacked in the same cell; the
+   `is-copied` state crossfades/scales between them for a quick confirmation. */
+.copy-link-btn {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.copy-link-btn:hover,
+.copy-link-btn:focus-visible {
+  color: var(--fg);
+  border-color: var(--accent);
+}
+
+.copy-link-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.copy-link-icon {
+  grid-area: 1 / 1;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+/* Default: show copy, hide check (scaled down so it pops in on confirm). */
+.copy-link-icon--check {
+  color: var(--ok);
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+.copy-link-btn.is-copied .copy-link-icon--copy {
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+.copy-link-btn.is-copied .copy-link-icon--check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copy-link-icon {
+    transition: none;
+    transform: none;
+  }
+  .copy-link-btn.is-copied .copy-link-icon--copy {
+    transform: none;
+  }
+}
+
+/* "Share the link" onboarding: a one-time popover anchored under the copy-link
+   button when you land alone in a room, with an arrow pointing up at it. The
+   whole bubble is a button so a click anywhere dismisses it. */
+.share-onboarding {
+  position: absolute;
+  top: calc(100% + 10px);
+  /* Left-anchored to the row so the bubble overlaps the copy-link button, which
+     sits just after the (variable-width) room name. The arrow's exact x is set
+     in JS from the button's measured position (see positionShareArrow). */
+  left: 0;
+  z-index: 50;
+  max-width: min(260px, 80vw);
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  animation: share-onboarding-bob 1.4s ease-in-out infinite;
+}
+
+.share-onboarding-arrow {
+  position: absolute;
+  top: -6px;
+  /* JS sets `left` to the copy button's centre; translateX(-50%) centres the
+     diamond on that point (this `left` is just a fallback before JS runs). */
+  left: var(--share-arrow-left, 20px);
+  width: 13px;
+  height: 13px;
+  background: var(--accent);
+  border-radius: 2px;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.share-onboarding-text {
+  position: relative;
+}
+
+@keyframes share-onboarding-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Subtle pulse on the copy-link button itself while the nudge is showing. */
+.copy-link-btn.is-onboarding {
+  color: var(--fg);
+  border-color: var(--accent);
+  animation: copy-onboarding-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes copy-onboarding-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(91, 140, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(91, 140, 255, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-onboarding,
+  .copy-link-btn.is-onboarding {
+    animation: none;
+  }
+}
+
+.bandwidth {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0 0 18px;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.bw-meter {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.bw-arrow {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.bw-up .bw-arrow {
+  color: var(--accent);
+}
+
+.bw-down .bw-arrow {
+  color: var(--ok);
+}
+
+.bw-value {
+  min-width: 5.5em;
+}
+
+/* Per-peer diagnostics rail: one row per remote roster peer with connection
+   state as the colour-coded primary signal, plus up/down kbit/s, loss and RTT. */
+.diagnostics {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -8px 0 18px;
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.diagnostics:empty {
+  display: none;
+}
+
+.diag-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.diag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--muted);
+}
+
+.diag-row.state-ok .diag-dot {
+  background: var(--ok);
+}
+
+.diag-row.state-warn .diag-dot {
+  background: #f0b429;
+}
+
+.diag-row.state-bad .diag-dot {
+  background: var(--danger);
+}
+
+.diag-row.state-idle .diag-dot {
+  background: var(--accent);
+}
+
+/* Relay (TURN) on a diagnostics row: a violet border tint at the same 1px weight
+   as the default grey row border, mirroring the camera tile's relay indicator so
+   a relayed link reads as "different path" consistently across tile + rail. */
+.diag-row.is-relayed {
+  border-color: var(--relay);
+}
+
+.diag-name {
+  font-weight: 600;
+  color: var(--text, #e7e9ee);
+  max-width: 9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diag-state {
+  flex: 0 0 auto;
+  text-transform: lowercase;
+}
+
+.diag-row.state-warn .diag-state {
+  color: #f0b429;
+}
+
+.diag-row.state-bad .diag-state {
+  color: var(--danger);
+}
+
+.diag-metric {
+  margin-left: auto;
+}
+
+.diag-metric + .diag-metric {
+  margin-left: 0;
+}
+
+.diag-metric.warn {
+  color: #f0b429;
+}
+
+/* Relay/ICE health: why a current link won't come up (STUN-only deployment, or
+   the latest STUN/TURN refusal on a peer that is osäker right now). Healed
+   pairs drop their line; a newer error replaces the old one. Never session
+   history, so it never takes up space in a healthy call. */
+.ice-health {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -10px 0 18px;
+  padding: 6px 8px;
+  border: 1px solid #f0b429;
+  border-radius: 6px;
+  background: rgba(240, 180, 41, 0.08);
+  font-size: 11px;
+  line-height: 1.35;
+  color: #f0b429;
+}
+
+.ice-health-heading {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* Visually-hidden label kept for screen readers / accessibility. */
+.bw-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex: none;
+}
+
+.dot.speaking {
+  background: var(--ok);
+  box-shadow: 0 0 0 4px rgba(67, 209, 122, 0.18);
+}
+
+.connection-warning {
+  display: none;
+  color: #ffce8a;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.connection-uncertain .dot {
+  background: #ffb84c;
+  box-shadow: 0 0 0 4px rgba(255, 184, 76, 0.12);
+}
+
+.connection-connecting .dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(91, 140, 255, 0.14);
+}
+
+.connection-uncertain .connection-warning--uncertain {
+  display: block;
+}
+
+.connection-connecting .connection-warning--connecting {
+  display: block;
+  color: #a9c2ff;
+}
+
+.screen-wrap {
+  position: relative;
+  margin: 0 0 20px;
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.screen-wrap.can-reset-focus {
+  cursor: pointer;
+}
+
+.screen-wrap.is-focused .screen-video {
+  outline: 2px solid rgba(91, 140, 255, 0.45);
+  outline-offset: 2px;
+}
+
+/* Relay (TURN) ring on the stage, mirroring the tile's relay border. A
+   box-shadow (not the border/outline the focus state uses) so it composes with
+   the focus outline instead of fighting it. */
+.screen-wrap.is-relayed .screen-video {
+  box-shadow: 0 0 0 3px var(--relay);
+}
+
+.screen-video {
+  width: 100%;
+  border-radius: 12px;
+  background: #000;
+  border: 1px solid var(--border);
+  display: block;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+
+.screen-label {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Mic-off badge over the enlarged stage video: the focused participant has
+   deliberately muted. Bottom-left so it never collides with the PiP/fullscreen
+   buttons (top-right), the name pill (top-left in the expanded layout), or the
+   draggable fullscreen controls (bottom-right) — and mirrors the tile badge. */
+.screen-mute {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.screen-mute[hidden] {
+  display: none;
+}
+
+.screen-mute svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* "Stör ej" (Do Not Disturb) badge over the enlarged stage video. Same corner
+   as the mic-off badge (bottom-left) — they never show together, since the moon
+   subsumes the mic-off badge. Distinct indigo so it reads as its own state. */
+.screen-dnd {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #6d5bd0;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.screen-dnd[hidden] {
+  display: none;
+}
+
+.screen-dnd svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+  stroke: none;
+}
+
+.camera-limit-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 184, 76, 0.45);
+  background: rgba(255, 184, 76, 0.1);
+  color: #ffce8a;
+  font-size: 14px;
+}
+
+.camera-limit-banner p {
+  margin: 0;
+  flex: 1;
+}
+
+.camera-limit-dismiss {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fg);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1;
+  border: 1px solid var(--border);
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+#room-view.participants-many .video-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.video-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+  cursor: pointer;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+}
+
+.video-tile-media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #08090c;
+  border: 1px solid var(--border);
+  width: 100%;
+}
+
+.video-tile.has-video:hover .video-tile-media {
+  border-color: #4a5568;
+}
+
+.video-tile.is-focused .video-tile-media {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(91, 140, 255, 0.35);
+}
+
+.video-tile:focus-visible {
+  outline: none;
+}
+
+.video-tile:focus-visible .video-tile-media {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.video-tile:active {
+  transform: none;
+}
+
+.video-tile.self {
+  order: 999;
+}
+
+.video-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.video-tile-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #141820;
+  color: var(--muted);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.video-tile.has-video .video-tile-placeholder {
+  display: none;
+}
+
+.video-tile-name {
+  display: block;
+  padding: 0 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.video-tile:hover .video-tile-name,
+.video-tile:focus-visible .video-tile-name {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.video-tile .dot {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+}
+
+/* Relay (TURN) indicator: a violet border tint, matching the 1px weight of the
+   default/uncertain/connecting tile borders (no extra box-shadow ring — it read
+   as too heavy next to the thin grey borders). Relay has no text badge (unlike
+   the transient states); the colour alone carries it. The relay class is only
+   present while the peer is *connected via relay* — connecting/uncertain map to
+   "unknown" transport and clear it — so it never visually collides with those
+   states in practice; the border-color order (relay first) keeps the agreed
+   precedence for any theoretical overlap (connecting > uncertain > relay >
+   default). */
+.video-tile.connection-relayed .video-tile-media {
+  border-color: var(--relay);
+}
+
+.video-tile.connection-uncertain .video-tile-media {
+  border-color: rgba(255, 184, 76, 0.45);
+}
+
+.video-tile.connection-connecting .video-tile-media {
+  border-color: rgba(91, 140, 255, 0.4);
+}
+
+.video-tile .connection-warning {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: none;
+  color: #ffce8a;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.video-tile.connection-uncertain .connection-warning--uncertain {
+  display: block;
+}
+
+/* Persistent mic-off badge on a tile: this participant has muted their mic.
+   Bottom-left so it stays clear of the speaking dot (top-left) and the
+   connection badges (top-right). Hidden until `.is-muted`. */
+.video-tile .tile-mute {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  z-index: 1;
+  display: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.video-tile.is-muted .tile-mute {
+  display: grid;
+}
+
+.video-tile .tile-mute svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Persistent "Stör ej" badge on a tile: this participant hears/sees no one.
+   Same corner as the mic-off badge; the moon subsumes it (a DND peer is silent
+   too), so `.is-dnd` shows the moon and hides `.tile-mute`. */
+.video-tile .tile-dnd {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  z-index: 1;
+  display: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: #6d5bd0;
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.video-tile.is-dnd .tile-dnd {
+  display: grid;
+}
+
+.video-tile.is-dnd .tile-mute {
+  display: none;
+}
+
+.video-tile .tile-dnd svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  stroke: none;
+}
+
+.video-tile.connection-connecting .connection-warning--connecting {
+  display: block;
+  color: #a9c2ff;
+}
+
+/* --- Compact room layout (no stage) ------------------------------------ */
+#room-view.layout-compact .sidebar-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#room-view.layout-compact .room-header {
+  margin: 0;
+}
+
+#room-view.layout-compact .enable-audio,
+#room-view.layout-compact .camera-limit-banner,
+#room-view.layout-compact .bandwidth {
+  margin: 0;
+}
+
+#room-view.layout-compact .video-grid {
+  margin: 0;
+}
+
+/* Smallest layout (compact, < 5 participants, ~320px wide card): stack the
+   camera tiles in a single column so each one gets the full width and grows a
+   bit, instead of being squeezed into two narrow columns. */
+#room-view.layout-compact:not(.layout-compact-wide) .video-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Shrink the button text in the narrow layout so long Swedish labels
+   ("Stäng av video för mig", "Sluta dela skärm") don't look broken or wrap. */
+#room-view.layout-compact:not(.layout-compact-wide) .controls > button {
+  padding: 12px 14px;
+  font-size: 14px;
+}
+
+/* --- Gallery compact layout (cameras on, nothing pinned) --------------- */
+/* The camera grid becomes a wide, responsive gallery that fills the width.
+   auto-fit lets a few tiles grow to share the row (up to a sane cap so a lone
+   camera doesn't become enormous); they wrap to new rows as more cameras join,
+   and collapse to a single column on narrow viewports. */
+#room-view.layout-compact.gallery .video-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 460px));
+  justify-content: center;
+}
+
+/* On wide screens, split into a wide gallery (left) plus a slim controls column
+   (right), mirroring the focused stage layout. Below this width the .sidebar-rail
+   stays a single stacked column (see .layout-compact rules above). */
+@media (min-width: 760px) {
+  /* Two columns: a wide gallery on the left, the controls stacked on the right.
+     row-gap MUST be 0: the gallery spans every (mostly empty) implicit row, so
+     any row-gap multiplies into a huge phantom page height. The base
+     `.layout-compact .sidebar-rail` sets `gap: 12px` (flex), so we have to reset
+     the row component explicitly here. Spacing between the right-column items is
+     done with margins instead. */
+  #room-view.gallery .sidebar-rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(240px, 26%, 340px);
+    align-items: start;
+    column-gap: 20px;
+    row-gap: 0;
+  }
+
+  #room-view.gallery .sidebar-rail > * {
+    grid-column: 2;
+    margin: 0;
+  }
+
+  #room-view.gallery .sidebar-rail > * + * {
+    margin-top: 12px;
+  }
+
+  /* The gallery owns the left column across all rows but keeps its natural
+     height (align-self: start), so its camera tiles never stretch to match the
+     controls column. */
+  #room-view.gallery .sidebar-rail .video-grid {
+    grid-column: 1;
+    grid-row: 1 / span 9999;
+    align-self: start;
+    margin: 0;
+  }
+}
+
+/* Mobile gallery ("nothing focused"): shrink the per-tile minimum so a phone
+   fits two cameras side by side instead of one full-width tile (better screen
+   use; content is still legible). A lone tile still fills the row via auto-fit,
+   and larger phones may show three. Desktop gallery keeps its wider minmax
+   above. Only applies to the unfocused gallery — the focused/stacked mobile
+   layout is intentionally left as-is so a shared screen / focused camera stays
+   big. Capped at 759.98px so it never overlaps the desktop gallery split
+   (`min-width: 760px`) at exactly 760px, and the .98 avoids a sub-pixel gap. */
+@media (max-width: 759.98px) {
+  /* Trim the desktop-sized insets on phones so two 140px tiles actually fit
+     (the default 16px body + 28px card padding left too little width). */
+  body.room-gallery {
+    padding: 10px;
+  }
+
+  #room-view.layout-compact.gallery {
+    padding: 14px;
+  }
+
+  #room-view.layout-compact.gallery .video-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}
+
+/* --- Expanded room layout (stage + sidebar) ---------------------------- */
+/* The middle 24px column is the drag handle; it replaces the old column gap so
+   the visual separation stays ~24px. `--sidebar-width` is driven by JS (drag /
+   keyboard) and persisted in localStorage; the fallback keeps the default 320px
+   look before any interaction. */
+#room-view.layout-expanded {
+  min-height: calc(100dvh - 32px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px var(--sidebar-width, 320px);
+  column-gap: 0;
+  row-gap: 18px;
+  padding: 20px;
+  align-items: start;
+}
+
+#room-view.layout-expanded .screen-wrap {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #08090c;
+  min-height: calc(100dvh - 72px);
+  align-self: stretch;
+}
+
+#room-view.layout-expanded.local-share-stage .screen-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#room-view.layout-expanded.local-share-stage .screen-video {
+  width: min(100%, 280px);
+  height: auto;
+  max-height: none;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+#room-view.layout-expanded .sidebar-rail {
+  grid-column: 3;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  max-height: calc(100dvh - 72px);
+  overflow-y: auto;
+  container-type: inline-size;
+  container-name: sidebar;
+}
+
+#room-view.layout-expanded .sidebar-rail .room-header {
+  margin: 0;
+}
+
+#room-view.layout-expanded .sidebar-rail .enable-audio,
+#room-view.layout-expanded .sidebar-rail .camera-limit-banner,
+#room-view.layout-expanded .sidebar-rail .bandwidth {
+  margin: 0;
+}
+
+#room-view.layout-expanded .sidebar-rail .video-grid {
+  margin: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+/* When the sidebar is dragged very narrow, even two columns make the camera
+   tiles uselessly small. Below 200px (the panel can shrink to 162px), stack the
+   tiles one per row. The `sidebar` container is declared on `.sidebar-rail`
+   above. Overrides both the default 2-col grid and the participants-many
+   3-col grid. */
+@container sidebar (max-width: 200px) {
+  #room-view.layout-expanded .sidebar-rail .video-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+#room-view.layout-expanded .screen-video {
+  width: 100%;
+  height: 100%;
+  max-height: calc(100dvh - 72px);
+  border: 0;
+  border-radius: 0;
+  aspect-ratio: auto;
+}
+
+#room-view.layout-expanded .screen-label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 17, 21, 0.82);
+  color: var(--fg);
+  backdrop-filter: blur(8px);
+}
+
+#room-view.layout-expanded.local-share-stage .screen-label {
+  position: static;
+  margin-top: 8px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  backdrop-filter: none;
+}
+
+/* --- Sidebar resize handle -------------------------------------------- */
+/* Only meaningful in the two-column stage layout; hidden everywhere else
+   (compact, fullscreen, and the stacked mobile layout below). */
+.sidebar-resizer {
+  display: none;
+}
+
+#room-view.layout-expanded .sidebar-resizer {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.sidebar-resizer-grip {
+  width: 4px;
+  height: 48px;
+  max-height: 60%;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background 0.15s ease, height 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sidebar-resizer:hover .sidebar-resizer-grip,
+.sidebar-resizer.dragging .sidebar-resizer-grip {
+  background: var(--accent);
+  height: 72px;
+}
+
+.sidebar-resizer:focus {
+  outline: none;
+}
+
+.sidebar-resizer:focus-visible .sidebar-resizer-grip {
+  background: var(--accent);
+  height: 72px;
+  box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.35);
+}
+
+#room-view.fs-active .sidebar-resizer {
+  display: none;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#room-view .controls > button {
+  width: 100%;
+}
+
+/* Keep control labels readable as the expandable sidebar gets narrower. */
+#room-view.layout-expanded .sidebar-rail .controls > button {
+  min-height: clamp(38px, 14cqi, 48px);
+  padding: clamp(9px, 3.6cqi, 14px) clamp(9px, 4.5cqi, 16px);
+  font-size: clamp(11px, 5cqi, 16px);
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.quick-controls {
+  --fs-off-bg: #222734;
+  --fs-off-border: rgba(255, 255, 255, 0.08);
+  --fs-off-hover-bg: #313949;
+  --fs-off-hover-border: rgba(255, 255, 255, 0.24);
+  --fs-danger-hover: #ff7081;
+  --fs-accent-hover: #6f9bff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0;
+}
+
+.quick-controls .fs-btn {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-size: 14px;
+}
+
+.quick-controls .fs-btn-menu {
+  width: 32px;
+}
+
+.quick-controls .quick-split {
+  margin: 0;
+}
+
+/* Share + leave wrap together as one unit: if leave-btn can't fit on the
+   current row it drops to a new line and takes share-btn with it (the whole
+   group is a single flex item). Inside the group both buttons grow from their
+   squeezed 44px up to 76px whenever the row has room to spare, then stop and
+   let the toolbar center the cluster. */
+.quick-controls .quick-endgroup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 158px; /* 76 + 6 gap + 76 */
+}
+
+.quick-controls .quick-endgroup .fs-btn {
+  flex: 1 1 44px;
+  width: auto;
+  min-width: 44px;
+  max-width: 76px;
+}
+
+.controls .legacy-picker {
+  display: none !important;
+}
+
+.video-off {
+  flex: 1;
+  background: #222734;
+  color: var(--fg);
+}
+
+.video-off[aria-pressed="true"] {
+  background: #3a3040;
+  color: #d8c4e8;
+}
+
+/* "Stör ej" toggle: same base as .video-off; a distinct indigo when active so it
+   reads as its own mode (stronger than the video-opt-out purple). */
+.dnd-btn[aria-pressed="true"] {
+  background: #4a3f7a;
+  color: #e6ddff;
+}
+
+.dnd-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #c9bdf0;
+}
+
+/* Local presentation gate: while WE are in DND, dim the other participants and
+   hide their incoming video (audio is muted in JS) so we truly perceive no one
+   even before peers honor the flag. Our own self-tile stays clear. */
+#room-view.dnd-self .video-tile:not(.self) {
+  opacity: 0.5;
+}
+
+#room-view.dnd-self .video-tile:not(.self) .video-tile-media video,
+#room-view.dnd-self .screen-video {
+  visibility: hidden;
+}
+
+#audio-sink {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.info-dialog {
+  width: min(calc(100% - 32px), 600px);
+  max-height: min(760px, calc(100dvh - 32px));
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #353b47;
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--fg);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.65);
+}
+
+/* Lay the open dialog out as a column so the scrollable content fills the
+   space left over by the header instead of guessing a height from the
+   viewport. Scoped to [open] so the dialog stays hidden when closed. */
+.info-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-dialog::backdrop {
+  background: rgba(5, 7, 11, 0.76);
+  backdrop-filter: blur(4px);
+}
+
+.dialog-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dialog-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.dialog-close {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  background: #252a35;
+  color: var(--fg);
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.dialog-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+}
+
+.dialog-content section + section {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.dialog-content h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.dialog-content p {
+  margin: 0;
+  color: #c2c7d0;
+}
+
+.dialog-content ol {
+  margin: 12px 0 16px;
+  padding-left: 22px;
+  color: #c2c7d0;
+}
+
+.dialog-content li + li {
+  margin-top: 5px;
+}
+
+.dialog-content img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+/* --- Stage overlay toggles (picture-in-picture + fullscreen) ----------- */
+.fullscreen-btn,
+.pip-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(15, 17, 21, 0.7);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(6px);
+}
+
+/* Sit the PiP toggle just left of the fullscreen toggle so the two never
+   overlap when both are shown on the stage. */
+.pip-btn {
+  right: 60px;
+}
+
+.fullscreen-btn:hover,
+.fullscreen-btn:focus-visible,
+.pip-btn:hover,
+.pip-btn:focus-visible {
+  background: rgba(15, 17, 21, 0.9);
+  border-color: var(--accent);
+}
+
+.pip-btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.fullscreen-btn svg,
+.pip-btn svg,
+.fs-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* --- Fullscreen stage overlay ----------------------------------------- */
+/* Placed after the layout-expanded rules so equal-specificity selectors win
+   on source order. The pinned video fills the viewport, aspect ratio intact
+   (contain → letterbox on black); everything else is hidden. */
+body.fullscreen-stage {
+  overflow: hidden;
+}
+
+#room-view.fs-active .screen-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  margin: 0;
+  min-height: 0;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  background: #000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+/* `position: absolute` is load-bearing, not decoration. As a grid item the
+   video's `height: 100%` resolves against an auto-sized row track, i.e. against
+   nothing, so it fell back to its own intrinsic aspect ratio at full width —
+   1600x1280 for a 5:4 screen share, 1600x2844 for a portrait camera — and the
+   wrap's `overflow: hidden` cut the surplus off. `contain` never got a chance:
+   the *element* was bigger than the screen, not the picture inside it. Only a
+   16:9 source on a 16:9 display happened to land exactly right, which is why
+   this only bit some of the time. Sizing against the fixed wrap instead makes
+   both axes definite, so the frame letterboxes inside the viewport. */
+#room-view.fs-active .screen-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  aspect-ratio: auto;
+  object-fit: contain;
+}
+
+#room-view.fs-active .sidebar-rail {
+  display: none;
+}
+
+/* Auto-hide: stage controls + label fade after inactivity, back on pointer
+   move / tap (handled in JS by toggling .fs-idle on the wrap). */
+#screen-wrap.fs-idle .fs-controls,
+#screen-wrap.fs-idle .screen-label {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- Draggable control module ----------------------------------------- */
+.fs-controls {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(20, 23, 30, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  transition: opacity 0.25s ease;
+  touch-action: none;
+  --fs-off-bg: #222734;
+  --fs-off-border: rgba(255, 255, 255, 0.08);
+  --fs-off-hover-bg: #313949;
+  --fs-off-hover-border: rgba(255, 255, 255, 0.24);
+  --fs-danger-hover: #ff7081;
+  --fs-accent-hover: #6f9bff;
+}
+
+.fs-grip {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 44px;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.fs-grip:active {
+  cursor: grabbing;
+}
+
+.fs-grip svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fs-grip svg circle {
+  fill: currentColor;
+  stroke: none;
+}
+
+.fs-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--fs-off-bg);
+  color: var(--fg);
+  border: 1px solid var(--fs-off-border);
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+.fs-split {
+  display: flex;
+  align-items: stretch;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--fs-off-bg);
+  color: var(--fg);
+  border: 1px solid var(--fs-off-border);
+  overflow: hidden;
+}
+
+.fs-split .fs-btn {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.fs-btn-main {
+  width: 44px;
+  box-shadow: inset 0 0 0 1px transparent;
+}
+
+.fs-btn-menu {
+  width: 32px;
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.fs-btn-menu svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.16s ease;
+}
+
+.fs-btn-menu.is-open svg {
+  transform: rotate(180deg);
+}
+
+.fs-btn-menu.is-open.opens-down svg {
+  transform: rotate(0deg);
+}
+
+.fs-split > .fs-btn:hover:not(:disabled),
+.fs-split > .fs-btn:focus-visible {
+  background: var(--fs-off-hover-bg);
+}
+
+.fs-split.no-menu .fs-btn-main {
+  border-radius: 10px;
+}
+
+.fs-btn:hover:not(:disabled) {
+  background: var(--fs-off-hover-bg);
+  border-color: var(--fs-off-hover-border);
+}
+
+.fs-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.fs-btn .slash {
+  display: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.fs-mute[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.26);
+}
+
+.fs-mute[aria-pressed="false"] .slash {
+  display: block;
+}
+
+.fs-mute[aria-pressed="true"]:hover:not(:disabled),
+.fs-mute[aria-pressed="true"]:focus-visible {
+  background: var(--fs-accent-hover);
+}
+
+.fs-camera:not(.off) {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.26);
+}
+
+.fs-camera:not(.off):hover:not(:disabled),
+.fs-camera:not(.off):focus-visible {
+  background: var(--fs-accent-hover);
+}
+
+.fs-share[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.fs-share[aria-pressed="true"]:hover:not(:disabled),
+.fs-share[aria-pressed="true"]:focus-visible {
+  background: var(--fs-accent-hover);
+}
+
+.fs-share .screen {
+  fill: none;
+  transition: fill 0.14s ease;
+}
+
+.fs-share .active-dot {
+  display: none;
+  fill: currentColor;
+  stroke: none;
+}
+
+.fs-share[aria-pressed="true"] .screen {
+  fill: rgba(255, 255, 255, 0.22);
+}
+
+.fs-share[aria-pressed="true"] .active-dot {
+  display: block;
+}
+
+.fs-camera.off .slash {
+  display: block;
+}
+
+.fs-leave {
+  background: var(--danger);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.fs-leave:hover:not(:disabled),
+.fs-leave:focus-visible {
+  background: var(--fs-danger-hover);
+}
+
+.fs-btn-menu.is-open {
+  background: rgba(91, 140, 255, 0.24);
+  color: #d9e5ff;
+  border-left-color: rgba(111, 155, 255, 0.56);
+}
+
+.fs-device-menu {
+  position: fixed;
+  z-index: 1003;
+  width: min(320px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(20, 23, 30, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.58);
+  color: var(--fg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fs-device-menu[hidden] {
+  display: none;
+}
+
+.fs-device-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fs-device-section-title {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.fs-device-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fs-device-item {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  text-align: left;
+}
+
+.fs-device-item:hover,
+.fs-device-item:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.fs-device-item[aria-checked="true"] {
+  background: rgba(102, 182, 255, 0.14);
+  border-color: rgba(102, 182, 255, 0.45);
+}
+
+.fs-device-item-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fs-device-item-mark {
+  opacity: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.fs-device-item[aria-checked="true"] .fs-device-item-mark {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fs-btn-menu svg {
+    transition: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .dialog-header {
+    padding: 18px 18px 14px;
+  }
+
+  .dialog-content {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  body.room-expanded {
+    padding: 0;
+  }
+
+  body.room-expanded .app {
+    min-height: 100dvh;
+  }
+
+  #room-view.layout-expanded {
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  /* Stacked single-column layout: no vertical seam to drag. */
+  #room-view.layout-expanded .sidebar-resizer {
+    display: none;
+  }
+
+  #room-view.layout-expanded .screen-wrap {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 42dvh;
+  }
+
+  #room-view.layout-expanded .sidebar-rail {
+    grid-column: 1;
+    grid-row: 2;
+    max-height: none;
+    overflow: visible;
+  }
+
+  #room-view.layout-expanded .screen-video {
+    max-height: none;
+  }
+
+  #room-view.layout-expanded .sidebar-rail .video-grid {
+    max-height: min(200px, 38dvh);
+    overflow-y: auto;
+  }
+
+  #room-view.layout-expanded .sidebar-rail .controls {
+    margin-top: 0;
+  }
+}
+
+/* Environment banner: a slim, non-interactive ribbon pinned to the top edge so
+   testers can tell a non-prod deployment (e.g. staging) at a glance. Rendered
+   server-side only when APP_ENV is set to a non-production value. */
+.env-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  pointer-events: none;
+  overflow: hidden;
+  white-space: nowrap;
+  height: 24px;
+  line-height: 16px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-align: center;
+  text-transform: uppercase;
+  color: #1a1205;
+  background: repeating-linear-gradient(
+    45deg,
+    #f5b53d,
+    #f5b53d 12px,
+    #e0a52f 12px,
+    #e0a52f 24px
+  );
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+  transition:
+    height 0.55s ease,
+    padding 0.55s ease,
+    font-size 0.3s ease,
+    letter-spacing 0.3s ease,
+    box-shadow 0.55s ease;
+}
+
+/* After a short while in the room the banner folds up into a thin (2px) strip
+   of the same width — keeps the "non-prod" hint without eating screen space. */
+.env-banner.is-collapsed {
+  height: 2px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 0;
+  letter-spacing: 0;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .env-banner {
+    transition: none;
+  }
+}
+
+/* Shown briefly after a deploy-restore reload succeeds. See docs/session-restore.md. */
+.upgrade-toast {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+  max-width: min(92vw, 480px);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  color: #f0f4f8;
+  background: rgba(20, 28, 36, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.env-banner + .upgrade-toast {
+  top: 36px;
+}

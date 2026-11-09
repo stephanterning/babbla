@@ -1,0 +1,19 @@
+services:
+  babbla:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-8080}:8080"
+    environment:
+      PORT: "8080"
+      APP_ENV: ${APP_ENV:-}
+      TURN_PROVIDER: ${TURN_PROVIDER:-native}
+      TURN_URLS: ${TURN_URLS:-}
+      TURN_SECRET: ${TURN_SECRET:-}
+      TURN_TTL_SECONDS: ${TURN_TTL_SECONDS:-3600}
+      CLOUDFLARE_TURN_KEY_ID: ${CLOUDFLARE_TURN_KEY_ID:-}
+      CLOUDFLARE_TURN_API_TOKEN: ${CLOUDFLARE_TURN_API_TOKEN:-}
+      STATS_DB_PATH: ${STATS_DB_PATH:-:memory:}
+      STATS_HMAC_SECRET: ${STATS_HMAC_SECRET:-}
+      STATS_ASN_TSV: ${STATS_ASN_TSV:-}
+      STATS_RETENTION_DAYS: ${STATS_RETENTION_DAYS:-90}

@@ -1,0 +1,6 @@
+# Example for Caddy running on the same host as the Compose port mapping.
+# Replace this reserved hostname with the installation's own DNS name.
+# For a containerized proxy, configure its network and upstream explicitly.
+babbla.example.com {
+    reverse_proxy 127.0.0.1:8080
+}

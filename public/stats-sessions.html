@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="data:," />
+    <title>babbla — sessioner</title>
+    <style>
+      :root {
+        --bg: #0f1115; --card: #181b22; --fg: #e8eaed; --muted: #9aa0aa;
+        --accent: #5b8cff; --danger: #ff5b6e; --ok: #43d17a; --relay: #b388ff;
+        --border: #262a33;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      body {
+        margin: 0; min-height: 100dvh;
+        background: radial-gradient(1200px 800px at 50% -10%, #1b2030, var(--bg));
+        color: var(--fg);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        padding: 24px;
+      }
+      .wrap { max-width: 1200px; margin: 0 auto; }
+      header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 8px; }
+      h1 { font-size: 20px; margin: 0; font-weight: 650; }
+      h1 sup { font-size: 0.5em; color: var(--muted); font-weight: 500; }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .spacer { flex: 1; }
+      .muted { color: var(--muted); }
+      #status { font-size: 13px; color: var(--muted); }
+      #status.error { color: var(--danger); }
+      select, button, input[type="date"] {
+        background: #0f1218; color: var(--fg); border: 1px solid var(--border);
+        border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer;
+      }
+      button:hover:not(:disabled), input[type="date"]:hover { border-color: var(--accent); }
+      button:disabled { opacity: 0.4; cursor: not-allowed; }
+      button:focus, input:focus { outline: 2px solid var(--accent); }
+      .daynav { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+      #day-label { font-weight: 600; min-width: 170px; }
+      .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+      .panel h2 { font-size: 14px; margin: 0 0 4px; font-weight: 600; }
+      .panel .sub { font-size: 12px; color: var(--muted); margin: 0 0 12px; }
+
+      /* --- sessions overview grid (frozen label column + scrollable day) --- */
+      .sessions-scroll { overflow: auto; max-height: 58vh; border: 1px solid var(--border); border-radius: 10px; }
+      .sessions-inner { position: relative; }
+      .sessions-axis-row { display: flex; position: sticky; top: 0; z-index: 3; height: 28px; background: var(--card); border-bottom: 1px solid var(--border); }
+      .sessions-corner { position: sticky; left: 0; z-index: 4; width: 190px; min-width: 190px; background: var(--card); border-right: 1px solid var(--border); display: flex; align-items: center; padding: 0 10px; font-size: 11px; color: var(--muted); }
+      .sessions-axis { position: relative; height: 28px; flex: none; }
+      .axis-tick { position: absolute; top: 8px; transform: translateX(-50%); font-size: 10px; color: var(--muted); }
+      .axis-line { position: absolute; top: 26px; height: 6px; width: 1px; background: rgba(255, 255, 255, 0.12); }
+      .srow { display: flex; height: 42px; cursor: pointer; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+      .srow:hover { background: rgba(255, 255, 255, 0.03); }
+      .srow.selected { background: rgba(91, 140, 255, 0.14); }
+      .srow:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+      .slabel { position: sticky; left: 0; z-index: 2; width: 190px; min-width: 190px; background: var(--card); border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 0 10px; }
+      .srow.selected .slabel { background: #1d2433; }
+      .slabel-main { font-size: 12px; color: var(--fg); }
+      .slabel-sub { font-size: 10px; color: var(--muted); }
+      .relay-dot { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background: var(--relay); }
+      .stime { position: relative; flex: none; }
+      .sbar { position: absolute; top: 12px; height: 18px; border-radius: 4px; background: #3a4150; }
+      .sbar.relay { background: #43375f; border: 1px solid var(--relay); }
+
+      .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 4px 0 12px; font-size: 12px; color: var(--muted); }
+      .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+      .legend-item i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+      #detail { width: 100%; overflow-x: auto; }
+      #empty-note { color: var(--muted); font-size: 14px; display: flex; align-items: center; gap: 12px; }
+      footer { margin-top: 24px; font-size: 12px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>babbla <sup>sessioner</sup></h1>
+        <a href="/stats">← Statistik</a>
+        <div class="spacer"></div>
+        <span id="status"></span>
+        <button id="refresh" type="button">Uppdatera</button>
+      </header>
+
+      <div class="daynav">
+        <button id="prev-day" type="button" title="Föregående dag">‹ Föregående</button>
+        <span id="day-label">—</span>
+        <button id="next-day" type="button" title="Nästa dag">Nästa ›</button>
+        <button id="today-btn" type="button">Idag</button>
+        <input id="date-input" type="date" aria-label="Välj datum" />
+      </div>
+
+      <div class="panel">
+        <h2>Sessioner denna dag</h2>
+        <p class="sub">en rad per session · 00–24 (scrolla i sidled, default 08–18) · klicka en rad för detalj</p>
+        <div id="empty-note" hidden>
+          <span>Inga sessioner den här dagen.</span>
+          <button id="latest-active" type="button">‹ Senaste dagen med sessioner</button>
+        </div>
+        <div id="overview"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Sessionstidslinje</h2>
+        <p class="sub">vald session i detalj — närvaro + kamera/skärm/mute + transport per deltagare</p>
+        <div class="legend" id="legend"></div>
+        <div id="detail"></div>
+      </div>
+
+      <footer>babbla · build %BUILD_VERSION% · sessions-utforskare (PoC)</footer>
+    </div>
+
+    <script type="module" src="/js/stats/sessions.js"></script>
+  </body>
+</html>

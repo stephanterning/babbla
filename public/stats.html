@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="data:," />
+    <title>babbla — statistik</title>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --card: #181b22;
+        --fg: #e8eaed;
+        --muted: #9aa0aa;
+        --accent: #5b8cff;
+        --danger: #ff5b6e;
+        --ok: #43d17a;
+        --relay: #b388ff;
+        --border: #262a33;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: radial-gradient(1200px 800px at 50% -10%, #1b2030, var(--bg));
+        color: var(--fg);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        padding: 24px;
+      }
+      .wrap { max-width: 1200px; margin: 0 auto; }
+      header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 8px; }
+      h1 { font-size: 20px; margin: 0; font-weight: 650; }
+      h1 sup { font-size: 0.5em; color: var(--muted); font-weight: 500; }
+      .spacer { flex: 1; }
+      .muted { color: var(--muted); }
+      select, button {
+        background: #0f1218;
+        color: var(--fg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      select:focus, button:focus { outline: 2px solid var(--accent); }
+      button:hover { border-color: var(--accent); }
+      #status { font-size: 13px; color: var(--muted); }
+      #status.error { color: var(--danger); }
+
+      .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+      }
+      .card .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+      .card .v { font-size: 30px; font-weight: 650; margin-top: 4px; }
+      .card .d { font-size: 12px; color: var(--muted); margin-top: 4px; }
+      .card .v.relay { color: var(--relay); }
+      .card.link { display: flex; flex-direction: column; }
+      .card.link .cta { margin-top: auto; align-self: flex-start; }
+
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+      }
+      .panel h2 { font-size: 14px; margin: 0 0 4px; font-weight: 600; }
+      .panel .sub { font-size: 12px; color: var(--muted); margin: 0 0 12px; min-height: 16px; }
+      .chart-box { position: relative; height: 260px; }
+      .chart-box.zoomable, .chart-box.zoomable canvas { cursor: crosshair; }
+      .zoom-sel {
+        position: absolute; top: 0; bottom: 0; display: none;
+        background: rgba(91, 140, 255, 0.18);
+        border-left: 1px solid var(--accent); border-right: 1px solid var(--accent);
+        pointer-events: none;
+      }
+      .full { grid-column: 1 / -1; }
+
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .cta {
+        display: inline-block; margin-top: 4px; padding: 9px 14px; border-radius: 8px;
+        background: var(--accent); color: #fff; font-size: 14px; font-weight: 600;
+      }
+      .cta:hover { text-decoration: none; filter: brightness(1.08); }
+      footer { margin-top: 28px; font-size: 12px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>babbla <sup>statistik</sup></h1>
+        <div class="spacer"></div>
+        <span id="status"></span>
+        <label class="muted" for="range">intervall</label>
+        <select id="range" aria-label="Tidsintervall">
+          <option value="today" selected>idag</option>
+          <option value="7d">7 dagar</option>
+          <option value="30d">30 dagar</option>
+          <option value="all">allt</option>
+        </select>
+        <button id="refresh" type="button">Uppdatera</button>
+      </header>
+
+      <div class="cards">
+        <div class="card"><div class="k">Inne nu</div><div class="v" id="live-participants">–</div><div class="d">deltagare</div></div>
+        <div class="card"><div class="k">Aktiva rum nu</div><div class="v" id="live-rooms">–</div><div class="d">rum med ≥1 deltagare</div></div>
+        <div class="card"><div class="k">Reläbehov</div><div class="v relay" id="relay-pct">–</div><div class="d" id="relay-detail">—</div></div>
+        <div class="card link"><div class="k">Sessioner</div><a class="cta" href="/stats/sessions">Utforska →</a></div>
+      </div>
+
+      <div class="grid">
+        <div class="panel full">
+          <h2>Samtidighet över tid</h2>
+          <p class="sub">deltagare, aktiva rum och samtidiga reläpar, samplat över intervallet · dra i grafen för att zooma in</p>
+          <div class="chart-box zoomable"><canvas id="chart-concurrency"></canvas></div>
+        </div>
+
+        <div class="panel full">
+          <h2>Reläfrekvens per ASN</h2>
+          <p class="sub">hur ofta ett nätverk (AS) behövde relä</p>
+          <div class="chart-box"><canvas id="chart-asn"></canvas></div>
+        </div>
+      </div>
+
+      <footer>
+        babbla · build %BUILD_VERSION% · händelse-sourcad användningsstatistik (PoC)
+      </footer>
+    </div>
+
+    <script src="/vendor/chart.umd.min.js"></script>
+    <script type="module" src="/js/stats/dashboard.js"></script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log
+.DS_Store
+.env
+.idea
+# Local stats SQLite DB (STATS_DB_PATH); default is in-memory, but a local file
+# path leaves these.
+stats.db
+stats.db-shm
+stats.db-wal
+stats-demo.db
+stats-demo.db-shm
+stats-demo.db-wal
+.env.*
+!.env.example
+artifacts/
+test-results/

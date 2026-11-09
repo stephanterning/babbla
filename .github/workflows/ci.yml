@@ -1,0 +1,102 @@
+name: Test and publish image
+on:
+  pull_request:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Validate portable Compose example
+        run: docker compose config --quiet
+      - name: Build and smoke-test the application image
+        run: |
+          docker build --tag babbla-check .
+          docker run -d --name babbla-check babbla-check
+          trap 'docker rm -f babbla-check' EXIT
+          for attempt in $(seq 1 30); do
+            if docker exec babbla-check node -e "fetch('http://127.0.0.1:8080/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs babbla-check
+          exit 1
+
+  publish:
+    needs: test
+    concurrency:
+      group: publish-image-${{ github.sha }}
+      cancel-in-progress: false
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve image name and preserve existing builds
+        id: image
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          image="ghcr.io/${REPOSITORY,,}/app"
+          tag="sha-${GITHUB_SHA}"
+          digest=$(sh scripts/image-digest.sh "$image:$tag")
+          echo "name=$image" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "existing=$digest" >> "$GITHUB_OUTPUT"
+      - name: Set build timestamp
+        id: build_metadata
+        run: echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+      - name: Build and publish both architectures
+        if: steps.image.outputs.existing == ''
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            BUILD_TIME=${{ steps.build_metadata.outputs.created }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Record published image
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          digest=$(sh scripts/image-digest.sh "$IMAGE:$TAG")
+          test -n "$digest"
+          printf 'Image: `%s:%s`\n\nPinned reference: `%s@%s`\n' \
+            "$IMAGE" "$TAG" "$IMAGE" "$digest" >> "$GITHUB_STEP_SUMMARY"

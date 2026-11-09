@@ -1,0 +1,24 @@
+{
+  "name": "babbla",
+  "version": "0.1.1",
+  "description": "Full-duplex audio room (WebRTC mesh + WebSocket signaling)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test test/*.test.js",
+    "e2e": "node scripts/e2e.mjs",
+    "relay-check": "node scripts/relay-live-check.mjs",
+    "tunnel": "node scripts/tunnel.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.43.1"
+  }
+}
