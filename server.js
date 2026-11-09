@@ -212,11 +212,9 @@ const stats = createStats({
   retentionDays: Number.isFinite(STATS_RETENTION_DAYS) ? STATS_RETENTION_DAYS : 90,
 });
 
-// A client-reported public IP (sent with `join`) — the only IP source for the
-// ASN lookup. The server can't observe the real client IP here: this host runs
-// behind a proxy/NAT that rewrites the source address before it reaches us
-// (a proxy or NAT can hide the original source address), so
-// X-Forwarded-For only ever carried that gateway and every ASN came back null.
+// A client-reported public IP (sent with `join`) is the only source for ASN
+// lookup. Proxies and NAT may hide the source address, so this telemetry does
+// not depend on forwarded headers or on the installation's network topology.
 // The browser learns its real IP via STUN and sends it here. Only a coarse shape
 // check (an IPv4/IPv6 literal, length-capped) — the ASN lookup itself rejects
 // anything non-routable, and the value is used solely for that offline lookup
