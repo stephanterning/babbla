@@ -92,5 +92,10 @@ See [image-based installation](docs/operations.md#published-images).
 summarizes architecture and contribution rules. Design notes under `docs/` cover
 media recovery, device selection, echo cancellation and statistics.
 
-This repository is currently private. An open-source license has not yet been
-selected; image publication does not imply permission to redistribute the code.
+## License
+
+Copyright (C) 2026 Stephan Terning.
+
+Babbla is licensed under the GNU Affero General Public License v3.0 only
+(`AGPL-3.0-only`). See [LICENSE](LICENSE). Third-party dependencies retain their
+own licenses.

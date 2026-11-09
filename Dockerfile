@@ -6,6 +6,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
+COPY LICENSE ./
+LABEL org.opencontainers.image.licenses="AGPL-3.0-only"
+
 COPY *.js ./
 COPY stats ./stats
 COPY public ./public
