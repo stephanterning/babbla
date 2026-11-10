@@ -1,11 +1,17 @@
-# Plan: selektiv coturn-fallback + relä-indikator
+# TURN fallback and relay-aware media design
 
 > The application supports optional TURN credentials and relay-aware media policy.
-> This document describes the application contract and design rationale.
+> This document preserves the original shared-secret TURN design rationale,
+> including historical observations. It does not describe a running installation.
+> For current provider configuration, see [operations](operations.md) and
+> [Cloudflare TURN](turn-cloudflare.md). Hosting and transport choices belong
+> to the operator; coturn is one supported option, not a required deployment.
 
 ## Problemet vi löser
 
-babbla kör idag **STUN-only** (`ICE_SERVERS` i `public/js/room-controller.js`).
+The original design started from the STUN-only fallback in
+`public/js/room-controller.js`. The application now accepts operator-configured
+TURN providers; an installation with no TURN configuration remains STUN-only.
 Det räcker oftast, men inte alltid: en deltagare kan hamna i ett läge där det
 **direkta** P2P-paret mot en (eller flera) andra deltagare aldrig kommer upp,
 medan andra par i samma rum fungerar. Konkret observerat: en session A/B/C där
@@ -188,17 +194,16 @@ livstid från samtalets längd genom att **rulla biljetter kontinuerligt**:
   reconnect. Den proaktiva förnyelsen täcker det *andra* fallet: en lång session
   som ligger kvar på samma WS i timmar utan reconnect, plus en peer som joinar sent.
 
-## Transport
+## Transport configuration
 
-- **TURN/UDP först:** port **3478/udp** + ett **relä-portintervall** (UDP).
-  Täcker symmetrisk NAT, det realistiska "P2P failar"-fallet på hemma-/mobilnät.
-- **TURN/TLS-på-443 skjuts upp.** Nät som blockerar *all* utgående UDP hjälps
-  inte av UDP-only-TURN; då krävs TURN över TCP/TLS på 443 (ser ut som HTTPS).
-  Men det krockar med att babbla redan kör HTTPS på 443 via Caddy → kräver en
-  **dedikerad IP** eller separat host för coturn. Bevisen för att det behövs är
-  idag svaga (det enda testade företagsnätet fungerade STUN-only; det rapporterade
-  "STUN failar"-fallet var en iOS-bugg). **Känd begränsning:** bygg TLS/443 först
-  när fält-diagnostik faktiskt visar ett UDP-blockerat nät.
+The operator supplies reachable TURN URLs and chooses their UDP, TCP or TLS
+transports. UDP is useful for low-latency media; TLS can support networks that
+block outbound UDP. Neither a specific port nor a reverse proxy is an application
+requirement. Port sharing, dedicated addresses, relay ranges, NAT and firewall
+rules belong to the installation or managed provider.
+
+Test the configured transports from the networks the application needs to
+support. The application does not assume that TLS is unavailable or deferred.
 
 ## Härdning av coturn (öppna rum ⇒ exponerad relä)
 
@@ -275,9 +280,11 @@ anslutningen är annorlunda än direkt P2P.
 
 ## Operator configuration
 
-Configure `TURN_URLS` and `TURN_SECRET` in the application environment. The
-selected TURN server must use the same shared secret for time-limited credentials.
-Without these settings clients keep their STUN-only fallback.
+For a shared-secret TURN service, set `TURN_PROVIDER=native`, `TURN_URLS` and
+`TURN_SECRET`; the TURN service must use the same secret. Alternatively choose
+`TURN_PROVIDER=cloudflare` and supply its documented credential-provider settings.
+An unconfigured native provider uses the STUN-only fallback. These are generic
+runtime options, not instructions to install a local TURN server.
 
 The operator chooses TURN hosting, realm, reachable UDP/TCP/TLS endpoints, relay
 port ranges, NAT mapping and firewall policy. Configure these outside the
@@ -325,7 +332,7 @@ fastnar på 'ansluter'" bor i
 
 ## Öppna frågor / framtid
 
-- TURN/TLS-på-443 + dedikerad IP om ett verkligt UDP-blockerat nät dyker upp.
+- Transport coverage must be verified for the operator-selected provider and networks.
 - Moderation / stängning av öppna rum, rums-bundna credentials, kostnadstak —
   förutsättning för säker bred drift (se säkerhetsrisken ovan).
 - Exakta värden: credential-TTL (~1 h), relä-portintervallets storlek, `realm`,
